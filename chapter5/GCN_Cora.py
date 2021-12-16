@@ -1,23 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# <h1>Table of Contents<span class="tocSkip"></span></h1>
-# <div class="toc"><ul class="toc-item"><li><span><a href="#基于Cora数据集的GCN节点分类" data-toc-modified-id="基于Cora数据集的GCN节点分类-1"><span class="toc-item-num">1&nbsp;&nbsp;</span>基于Cora数据集的GCN节点分类</a></span><ul class="toc-item"><li><span><a href="#SetUp" data-toc-modified-id="SetUp-1.1"><span class="toc-item-num">1.1&nbsp;&nbsp;</span>SetUp</a></span></li><li><span><a href="#数据准备" data-toc-modified-id="数据准备-1.2"><span class="toc-item-num">1.2&nbsp;&nbsp;</span>数据准备</a></span></li><li><span><a href="#图卷积层定义" data-toc-modified-id="图卷积层定义-1.3"><span class="toc-item-num">1.3&nbsp;&nbsp;</span>图卷积层定义</a></span></li><li><span><a href="#模型定义" data-toc-modified-id="模型定义-1.4"><span class="toc-item-num">1.4&nbsp;&nbsp;</span>模型定义</a></span></li><li><span><a href="#模型训练" data-toc-modified-id="模型训练-1.5"><span class="toc-item-num">1.5&nbsp;&nbsp;</span>模型训练</a></span></li></ul></li></ul></div>
-
-# # 基于Cora数据集的GCN节点分类
-
-# <table align="left">
-#   <td>
-#     <a target="_blank" href="https://colab.research.google.com/github/FighterLYL/GraphNeuralNetwork/blob/master/chapter5/GCN_Cora.ipynb"><img src="https://www.tensorflow.org/images/colab_logo_32px.png" />Run in Google Colab</a>
-#   </td>
-# </table>
-
-# 在Colab中运行时可以通过`代码执行程序->更改运行时类型`选择使用`GPU`
-
-# ## SetUp
-
-# In[1]:
-
 
 import itertools
 import os
@@ -36,10 +16,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 
 
-# ## 数据准备
-
-# In[2]:
-
+# 用于保存处理好的数据
 
 Data = namedtuple('Data', ['x', 'y', 'adjacency',
                            'train_mask', 'val_mask', 'test_mask'])
@@ -50,10 +27,11 @@ def tensor_from_numpy(x, device):
 
 
 class CoraData(object):
+    downloadurl = 'https://github.com/kimiyoung/planetoid/tree/master/data'
     filenames = ["ind.cora.{}".format(name) for name in
                  ['x', 'tx', 'allx', 'y', 'ty', 'ally', 'graph', 'test.index']]
 
-    def __init__(self, data_root="../data/cora", rebuild=False):
+    def __init__(self, data_root="cora", rebuild=False):
         """Cora数据，包括数据下载，处理，加载等功能
         当数据的缓存文件存在时，将使用缓存文件，否则将下载、进行处理，并缓存到磁盘
 
@@ -75,11 +53,12 @@ class CoraData(object):
 
         """
         self.data_root = data_root
-        save_file = osp.join(self.data_root, "ch5_cached.pkl")
+        save_file = osp.join(self.data_root, "processed_cora.pkl")
         if osp.exists(save_file) and not rebuild:
             print("Using Cached file: {}".format(save_file))
             self._data = pickle.load(open(save_file, "rb"))
         else:
+            self.maybe_download()
             self._data = self.process_data()
             with open(save_file, "wb") as f:
                 pickle.dump(self.data, f)
@@ -89,6 +68,24 @@ class CoraData(object):
     def data(self):
         """返回Data数据对象，包括x, y, adjacency, train_mask, val_mask, test_mask"""
         return self._data
+
+    def maybe_download(self):
+        save_path = osp.join(self.data_root, "raw")
+        for name in self.filenames:
+            if not osp.exists(osp.join(save_path, name)):
+                self.download_data (
+                    "{}/{}".format(self.downloadurl, name), save_path
+                )
+    @staticmethod
+    def download_data(url, save_path):
+        if not osp.exists(save_path):
+            os.makedirs(save_path)
+        data = urllib.request.urlopen(url)
+        filename = osp.basename(url)
+        with open(osp.join(save_path, filename), 'wb') as f:
+            f.write(data.read())
+
+        return True
 
     def process_data(self):
         """
@@ -249,9 +246,6 @@ LEARNING_RATE = 0.1
 WEIGHT_DACAY = 5e-4
 EPOCHS = 200
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-
-
-# In[7]:
 
 
 # 加载数据，并转换为torch.Tensor

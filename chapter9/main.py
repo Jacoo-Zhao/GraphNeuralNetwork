@@ -116,7 +116,7 @@ def train():
         loss.backward()  # 反向传播计算参数的梯度
         optimizer.step()  # 使用优化方法进行梯度更新
 
-        tr = test()
+        tr = no_test()
         test_result.append(tr)
         model.train()
         print(f"Epoch {e:04d}: TrainLoss: {loss.item():.4f}, TrainRMSE: {rmse.item():.4f}, "
@@ -128,7 +128,7 @@ def train():
 
 
 @torch.no_grad()
-def test():
+def no_test():
     model.eval()
     logits = model(*model_inputs)
     test_mask = ~train_mask

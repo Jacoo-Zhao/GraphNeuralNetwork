@@ -12,6 +12,7 @@ from data import CoraData
 from sampling import multihop_sampling
 
 from collections import namedtuple
+print('111111111')
 INPUT_DIM = 1433    # 输入维度
 # Note: 采样的邻居阶数需要与GCN的层数保持一致
 HIDDEN_DIM = [128, 7]   # 隐藏单元节点数
@@ -53,10 +54,10 @@ def train():
             loss.backward()  # 反向传播计算参数的梯度
             optimizer.step()  # 使用优化方法进行梯度更新
             print("Epoch {:03d} Batch {:03d} Loss: {:.4f}".format(e, batch, loss.item()))
-        test()
+        qqqtest()
 
 
-def test():
+def qqqtest():
     model.eval()
     with torch.no_grad():
         test_sampling_result = multihop_sampling(test_index, NUM_NEIGHBORS_LIST, data.adjacency_dict)
